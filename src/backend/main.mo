@@ -14,9 +14,11 @@ actor {
   include MixinAuthorization(accessControlState);
   include MixinStorage();
 
-  // Pre-register owner as admin
+  // Pre-register owners as admin
   let ownerPrincipal = Principal.fromText("4tqti-hjtqd-lw5wl-y2qjy-dnnbe-nsseh-qdwqa-bfyjb-o65fm-4telm-sqe");
   accessControlState.userRoles.add(ownerPrincipal, #admin);
+  let ownerPrincipal2 = Principal.fromText("wubtp-ryfgm-wshbl-ffrtx-x2not-hgupb-e67m4-xtdn2-tynus-ghibd-wae");
+  accessControlState.userRoles.add(ownerPrincipal2, #admin);
   accessControlState.adminAssigned := true;
 
   type OrderId = Nat;
