@@ -1,5 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -26,15 +28,18 @@ import {
   LogOut,
   ShieldCheck,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { OrderStatus, ProductSize } from "../backend";
-import type { ContactMessage, Order } from "../backend.d";
+import type { ContactMessage, Order, PriceConfig } from "../backend.d";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
   useGetAllContactMessages,
   useGetAllOrders,
+  useGetPrices,
   useIsCallerAdmin,
   useUpdateOrderStatus,
+  useUpdatePrices,
 } from "../hooks/useQueries";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -66,7 +71,49 @@ export default function Admin() {
   const { data: messages = [], isLoading: messagesLoading } =
     useGetAllContactMessages();
   const updateStatus = useUpdateOrderStatus();
+  const { data: priceData } = useGetPrices();
+  const updatePrices = useUpdatePrices();
   const [activeTab, setActiveTab] = useState("orders");
+  const [price500ml, setPrice500ml] = useState("9");
+  const [price1000ml, setPrice1000ml] = useState("12");
+  const [discount500ml, setDiscount500ml] = useState("");
+  const [discount1000ml, setDiscount1000ml] = useState("");
+  const [offerLabel500ml, setOfferLabel500ml] = useState("");
+  const [offerLabel1000ml, setOfferLabel1000ml] = useState("");
+
+  useEffect(() => {
+    if (priceData) {
+      setPrice500ml(priceData.price500ml.toString());
+      setPrice1000ml(priceData.price1000ml.toString());
+      setDiscount500ml(
+        priceData.discount500ml != null
+          ? priceData.discount500ml.toString()
+          : "",
+      );
+      setDiscount1000ml(
+        priceData.discount1000ml != null
+          ? priceData.discount1000ml.toString()
+          : "",
+      );
+      setOfferLabel500ml(priceData.offerLabel500ml ?? "");
+      setOfferLabel1000ml(priceData.offerLabel1000ml ?? "");
+    }
+  }, [priceData]);
+
+  function handleSavePrices() {
+    const config: PriceConfig = {
+      price500ml: BigInt(price500ml || "9"),
+      price1000ml: BigInt(price1000ml || "12"),
+      discount500ml: discount500ml ? BigInt(discount500ml) : undefined,
+      discount1000ml: discount1000ml ? BigInt(discount1000ml) : undefined,
+      offerLabel500ml: offerLabel500ml || undefined,
+      offerLabel1000ml: offerLabel1000ml || undefined,
+    };
+    updatePrices.mutate(config, {
+      onSuccess: () => toast.success("Prices updated successfully!"),
+      onError: () => toast.error("Failed to update prices. Please try again."),
+    });
+  }
   const [copied, setCopied] = useState(false);
 
   const principalId = identity?.getPrincipal().toString() ?? "";
@@ -306,6 +353,9 @@ export default function Admin() {
             <TabsTrigger value="messages" data-ocid="admin.tab">
               Messages ({typedMessages.length})
             </TabsTrigger>
+            <TabsTrigger value="prices" data-ocid="admin.tab">
+              Price Management
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="orders">
@@ -475,6 +525,156 @@ export default function Admin() {
                 </Table>
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="prices">
+            <div className="bg-white rounded-xl border border-border shadow-xs p-8 max-w-2xl">
+              <h2 className="text-xl font-bold text-navy mb-1">
+                Price Management
+              </h2>
+              <p className="text-sm text-muted-foreground mb-8">
+                Update bottle prices and discount offers. Changes reflect
+                immediately on the website.
+              </p>
+
+              <div className="space-y-8">
+                <div>
+                  <h3 className="text-base font-semibold text-navy mb-4 pb-2 border-b border-border">
+                    500ml Bottles
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="price500ml"
+                        className="text-sm font-medium"
+                      >
+                        Price (₹) *
+                      </Label>
+                      <Input
+                        id="price500ml"
+                        type="number"
+                        min="1"
+                        value={price500ml}
+                        onChange={(e) => setPrice500ml(e.target.value)}
+                        className="rounded-lg"
+                        data-ocid="admin.input"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="discount500ml"
+                        className="text-sm font-medium"
+                      >
+                        Discount Price (₹)
+                      </Label>
+                      <Input
+                        id="discount500ml"
+                        type="number"
+                        min="1"
+                        placeholder="Leave blank for no discount"
+                        value={discount500ml}
+                        onChange={(e) => setDiscount500ml(e.target.value)}
+                        className="rounded-lg"
+                        data-ocid="admin.input"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="offerLabel500ml"
+                        className="text-sm font-medium"
+                      >
+                        Offer Label
+                      </Label>
+                      <Input
+                        id="offerLabel500ml"
+                        type="text"
+                        placeholder="e.g. Limited Offer!"
+                        value={offerLabel500ml}
+                        onChange={(e) => setOfferLabel500ml(e.target.value)}
+                        className="rounded-lg"
+                        data-ocid="admin.input"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-base font-semibold text-navy mb-4 pb-2 border-b border-border">
+                    1000ml Bottles
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="price1000ml"
+                        className="text-sm font-medium"
+                      >
+                        Price (₹) *
+                      </Label>
+                      <Input
+                        id="price1000ml"
+                        type="number"
+                        min="1"
+                        value={price1000ml}
+                        onChange={(e) => setPrice1000ml(e.target.value)}
+                        className="rounded-lg"
+                        data-ocid="admin.input"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="discount1000ml"
+                        className="text-sm font-medium"
+                      >
+                        Discount Price (₹)
+                      </Label>
+                      <Input
+                        id="discount1000ml"
+                        type="number"
+                        min="1"
+                        placeholder="Leave blank for no discount"
+                        value={discount1000ml}
+                        onChange={(e) => setDiscount1000ml(e.target.value)}
+                        className="rounded-lg"
+                        data-ocid="admin.input"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="offerLabel1000ml"
+                        className="text-sm font-medium"
+                      >
+                        Offer Label
+                      </Label>
+                      <Input
+                        id="offerLabel1000ml"
+                        type="text"
+                        placeholder="e.g. Buy 2 Get 1"
+                        value={offerLabel1000ml}
+                        onChange={(e) => setOfferLabel1000ml(e.target.value)}
+                        className="rounded-lg"
+                        data-ocid="admin.input"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={handleSavePrices}
+                  disabled={updatePrices.isPending}
+                  className="rounded-pill bg-primary text-white font-bold hover:opacity-90 px-8"
+                  data-ocid="admin.save_button"
+                >
+                  {updatePrices.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />{" "}
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Prices"
+                  )}
+                </Button>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </main>

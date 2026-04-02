@@ -35,6 +35,15 @@ actor {
     #fulfilled;
   };
 
+  public type PriceConfig = {
+    price500ml : Nat;
+    price1000ml : Nat;
+    discount500ml : ?Nat;
+    discount1000ml : ?Nat;
+    offerLabel500ml : ?Text;
+    offerLabel1000ml : ?Text;
+  };
+
   public type Order = {
     productSize : ProductSize;
     quantity : Nat;
@@ -69,6 +78,26 @@ actor {
 
   var nextOrderId = 1;
   var nextContactId = 1;
+
+  var priceConfig : PriceConfig = {
+    price500ml = 9;
+    price1000ml = 12;
+    discount500ml = null;
+    discount1000ml = null;
+    offerLabel500ml = null;
+    offerLabel1000ml = null;
+  };
+
+  public query func getPrices() : async PriceConfig {
+    priceConfig;
+  };
+
+  public shared ({ caller }) func updatePrices(config : PriceConfig) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can update prices");
+    };
+    priceConfig := config;
+  };
 
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {

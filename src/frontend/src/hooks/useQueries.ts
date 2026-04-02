@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { ContactMessage, Order } from "../backend";
 import type { OrderStatus } from "../backend";
+import type { ContactMessage, Order, PriceConfig } from "../backend.d";
 import { useActor } from "./useActor";
 
 export function useGetAllOrders() {
@@ -61,7 +61,7 @@ export function useSubmitOrder() {
   return useMutation({
     mutationFn: async (order: Order) => {
       if (!actor) throw new Error("No actor");
-      return actor.submitOrder(order);
+      return actor.submitOrder(order as any);
     },
   });
 }
@@ -72,6 +72,40 @@ export function useSubmitContactMessage() {
     mutationFn: async (message: ContactMessage) => {
       if (!actor) throw new Error("No actor");
       return actor.submitContactMessage(message);
+    },
+  });
+}
+
+export function useGetPrices() {
+  const { actor, isFetching } = useActor();
+  return useQuery<PriceConfig>({
+    queryKey: ["prices"],
+    queryFn: async () => {
+      if (!actor)
+        return {
+          price500ml: 9n,
+          price1000ml: 12n,
+          discount500ml: undefined,
+          discount1000ml: undefined,
+          offerLabel500ml: undefined,
+          offerLabel1000ml: undefined,
+        };
+      return (actor as any).getPrices();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useUpdatePrices() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (config: PriceConfig) => {
+      if (!actor) throw new Error("No actor");
+      return (actor as any).updatePrices(config);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["prices"] });
     },
   });
 }

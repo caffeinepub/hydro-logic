@@ -36,6 +36,14 @@ export interface Order {
     quantity: bigint;
     phone: string;
 }
+export interface PriceConfig {
+    price500ml: bigint;
+    price1000ml: bigint;
+    discount500ml?: bigint;
+    discount1000ml?: bigint;
+    offerLabel500ml?: string;
+    offerLabel1000ml?: string;
+}
 export interface UserProfile {
     name: string;
     email: string;
@@ -62,10 +70,12 @@ export interface backendInterface {
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getOrderById(orderId: OrderId): Promise<Order>;
+    getPrices(): Promise<PriceConfig>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     submitContactMessage(message: ContactMessage): Promise<ContactId>;
     submitOrder(order: Order): Promise<OrderId>;
     updateOrderStatus(orderId: OrderId, status: OrderStatus): Promise<void>;
+    updatePrices(config: PriceConfig): Promise<void>;
 }

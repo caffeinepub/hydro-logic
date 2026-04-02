@@ -18,7 +18,11 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { ExternalBlob } from "../backend";
 import { OrderStatus, ProductSize } from "../backend";
-import { useSubmitContactMessage, useSubmitOrder } from "../hooks/useQueries";
+import {
+  useGetPrices,
+  useSubmitContactMessage,
+  useSubmitOrder,
+} from "../hooks/useQueries";
 
 const NAV_LINKS = [
   { label: "Bottles", href: "#products" },
@@ -133,6 +137,7 @@ export default function Home() {
 
   const submitOrder = useSubmitOrder();
   const submitContact = useSubmitContactMessage();
+  const { data: priceData } = useGetPrices();
 
   const configuratorImage =
     configuratorType === "PET"
@@ -432,9 +437,45 @@ export default function Home() {
                     {product.desc}
                   </p>
                   <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-primary">
-                      {product.price}
-                    </span>
+                    <div>
+                      {(() => {
+                        const isSmall = product.size === "500ml";
+                        const price = isSmall
+                          ? (priceData?.price500ml ?? 9n)
+                          : (priceData?.price1000ml ?? 12n);
+                        const discount = isSmall
+                          ? priceData?.discount500ml
+                          : priceData?.discount1000ml;
+                        const offerLabel = isSmall
+                          ? priceData?.offerLabel500ml
+                          : priceData?.offerLabel1000ml;
+                        return (
+                          <>
+                            {offerLabel && (
+                              <span className="inline-block text-xs font-semibold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full mb-1">
+                                {offerLabel}
+                              </span>
+                            )}
+                            <div className="flex items-baseline gap-2">
+                              {discount != null ? (
+                                <>
+                                  <span className="text-2xl font-bold text-green-600">
+                                    ₹{discount.toString()}
+                                  </span>
+                                  <span className="text-base text-muted-foreground line-through">
+                                    ₹{price.toString()}
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="text-2xl font-bold text-primary">
+                                  ₹{price.toString()}
+                                </span>
+                              )}
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
                     <Button
                       className="rounded-pill bg-primary text-white hover:opacity-90 font-semibold text-sm uppercase tracking-wide"
                       onClick={() => {
@@ -1046,12 +1087,17 @@ export default function Home() {
             >
               <h3 className="text-xl font-bold text-navy">Contact Details</h3>
               {[
-                { icon: Phone, label: "Phone", value: "+1 (555) 012-3456" },
-                { icon: Mail, label: "Email", value: "hello@hydro-logic.com" },
+                { icon: Phone, label: "Phone", value: "9699842139" },
+                {
+                  icon: Mail,
+                  label: "Email",
+                  value: "jpgoswami65793@gmail.com",
+                },
                 {
                   icon: MapPin,
                   label: "Location",
-                  value: "123 Hydration Lane, Water City, WC 10001",
+                  value:
+                    "Gosain Purwa, Chauhatta Khargupur, Gonda, Uttar Pradesh 271204",
                 },
               ].map(({ icon: Icon, label, value }) => (
                 <div key={label} className="flex items-start gap-4">
@@ -1266,15 +1312,15 @@ export default function Home() {
               <ul className="space-y-2">
                 <li className="flex items-center gap-2 text-sm text-white/60">
                   <Mail className="w-3.5 h-3.5" />
-                  hello@hydro-logic.com
+                  jpgoswami65793@gmail.com
                 </li>
                 <li className="flex items-center gap-2 text-sm text-white/60">
                   <Phone className="w-3.5 h-3.5" />
-                  +1 (555) 012-3456
+                  9699842139
                 </li>
                 <li className="flex items-start gap-2 text-sm text-white/60">
                   <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                  123 Hydration Lane, Water City
+                  Gosain Purwa, Chauhatta Khargupur, Gonda, UP 271204
                 </li>
               </ul>
             </div>
